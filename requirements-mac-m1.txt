@@ -2,6 +2,7 @@
 # Python 3.12 required
 # Install: pip install -r requirements-mac-m1.txt --prefer-binary
 
+mlx-whisper
 fastapi>=0.100.0
 uvicorn[standard]>=0.20.0
 pydantic>=2.0.0

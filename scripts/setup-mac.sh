@@ -52,6 +52,8 @@ echo ""
 echo "[5/6] Setting up environment config..."
 if [ ! -f .env ]; then
   cp .env.example .env
+  # Enable mlx-whisper by default on Apple Silicon
+  sed -i '' 's/WHISPER_BACKEND=faster-whisper/WHISPER_BACKEND=mlx-whisper/' .env
   echo ""
   echo ">>> IMPORTANT: Edit .env and fill in:"
   echo "    HF_TOKEN  - from https://huggingface.co/settings/tokens"

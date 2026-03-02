@@ -31,9 +31,12 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str = Field(default="redis://localhost:6379/1")
 
     # Model config
+    # faster-whisper (CPU/CUDA) or mlx-whisper (Apple Silicon only)
+    WHISPER_BACKEND: str = Field(default="faster-whisper")
     WHISPER_MODEL: str = Field(default="large-v3")
     WHISPER_DEVICE: str = Field(default="cpu")
     WHISPER_COMPUTE_TYPE: str = Field(default="int8")
+    WHISPER_MLX_MODEL: str = Field(default="mlx-community/whisper-large-v3-mlx")
 
     DIARIZATION_MODEL: str = Field(default="pyannote/speaker-diarization-3.1")
     DIARIZATION_DEVICE: str = Field(default="cpu")
