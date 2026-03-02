@@ -1,0 +1,64 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      LOCAL_STORAGE_PATH: /data/storage
+      TEMP_DIR: /data/tmp
+      HF_TOKEN: ${HF_TOKEN:-}
+      WHISPER_MODEL: ${WHISPER_MODEL:-large-v3}
+      VOICE_CLONE_MODEL: ${VOICE_CLONE_MODEL:-tts_models/multilingual/multi-dataset/xtts_v2}
+    volumes:
+      - ./backend:/app/backend
+      - dubbing_data:/data
+      - ./:/app
+    depends_on:
+      - redis
+
+  worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: celery -A backend.workers.celery_app.celery_app worker --loglevel=INFO --concurrency=1
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      LOCAL_STORAGE_PATH: /data/storage
+      TEMP_DIR: /data/tmp
+      HF_TOKEN: ${HF_TOKEN:-}
+      WHISPER_MODEL: ${WHISPER_MODEL:-large-v3}
+      VOICE_CLONE_MODEL: ${VOICE_CLONE_MODEL:-tts_models/multilingual/multi-dataset/xtts_v2}
+    volumes:
+      - ./backend:/app/backend
+      - dubbing_data:/data
+      - ./:/app
+    depends_on:
+      - redis
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000/api/v1
+    volumes:
+      - ./frontend/src:/app/src
+    depends_on:
+      - backend
+
+volumes:
+  dubbing_data:

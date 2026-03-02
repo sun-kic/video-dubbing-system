@@ -1,0 +1,36 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Environment / secrets
+.env
+
+# Runtime data
+*.db
+*.db-shm
+*.db-wal
+
+# Temp / output files
+/tmp/
+*.wav
+*.mp4
+*.mkv
+*.log
+
+# macOS
+.DS_Store
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp

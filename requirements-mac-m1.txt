@@ -1,0 +1,21 @@
+# Mac Apple Silicon (M1/M2/M3) requirements
+# Python 3.12 required
+# Install: pip install -r requirements-mac-m1.txt --prefer-binary
+
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-multipart>=0.0.5
+celery>=5.0.0
+redis>=5.0.0
+faster-whisper>=1.0.0
+pyannote.audio>=3.3.2
+f5-tts
+torch>=2.0.0
+ffmpeg-python>=0.2.0
+sqlalchemy>=2.0.0
+aiosqlite>=0.17.0
+openai>=1.0.0
+transformers>=4.30.0
+sentencepiece>=0.1.99

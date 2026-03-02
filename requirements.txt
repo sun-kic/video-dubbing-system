@@ -1,0 +1,19 @@
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+pydantic==2.11.7
+pydantic-settings==2.10.1
+python-multipart==0.0.20
+celery==5.5.3
+redis==5.2.1
+faster-whisper==1.1.1
+pyannote.audio>=3.3.2
+f5-tts
+torch>=2.0.0
+ffmpeg-python==0.2.0
+SQLAlchemy==2.0.43
+aiosqlite==0.20.0
+
+# Translation dependencies
+openai>=1.0.0
+transformers>=4.30.0
+sentencepiece>=0.1.99
