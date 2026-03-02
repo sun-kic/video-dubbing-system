@@ -83,7 +83,7 @@ Segments to translate:
             prompt += f"{i+1}. {text}\n"
 
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-5",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
         )
