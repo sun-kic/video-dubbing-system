@@ -6,6 +6,8 @@ python-multipart==0.0.20
 celery==5.5.3
 redis==5.2.1
 faster-whisper==1.1.1
+demucs>=4.0.0
+pydub>=0.25.0
 pyannote.audio>=3.3.2
 f5-tts
 torch>=2.0.0

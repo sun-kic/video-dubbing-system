@@ -5,8 +5,10 @@ A local AI-powered video dubbing pipeline. Automatically transcribes speech, tra
 ## Pipeline
 
 ```
-Video → Extract Audio → ASR (Whisper) → Translation → Speaker Diarization
-     → TTS Voice Cloning (F5-TTS) → Merge Audio → Mux with Video → Output
+Video → Extract Audio → Demucs ──→ Vocals  → ASR → Translation → Diarization
+                               └─→ BGM/SFX                          ↓
+                                      ↑           TTS Voice Cloning (F5-TTS)
+                                      └─── pydub mix (timestamp-aligned) ──→ Mux → Output
 ```
 
 ## Stack
@@ -17,9 +19,11 @@ Video → Extract Audio → ASR (Whisper) → Translation → Speaker Diarizatio
 | Task Queue | Celery + Redis |
 | ASR (Mac) | mlx-whisper — Apple Neural Engine |
 | ASR (Windows) | faster-whisper — CUDA |
+| Vocal Separation | Demucs `htdemucs` (vocals / no_vocals) |
 | Translation | GPT-5 (primary) / Helsinki-NLP offline (fallback) |
 | Speaker Diarization | pyannote.audio |
 | Voice Cloning TTS | F5-TTS |
+| Audio Mixing | pydub — TTS placed at original timestamps + background preserved |
 | Video Processing | FFmpeg |
 | Frontend | React + TypeScript (Vite) |
 

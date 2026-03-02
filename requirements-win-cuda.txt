@@ -3,6 +3,8 @@
 # Step 1: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 # Step 2: pip install -r requirements-win-cuda.txt --prefer-binary
 
+demucs>=4.0.0
+pydub>=0.25.0
 fastapi>=0.100.0
 uvicorn[standard]>=0.20.0
 pydantic>=2.0.0
