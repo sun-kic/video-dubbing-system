@@ -170,18 +170,32 @@ Double-click:
 
 ## Usage
 
-### 1. Prepare reference audio
+### Auto mode (recommended)
 
-Extract a 10-second clip of each speaker's voice (used for voice cloning):
+Pass an empty `speaker_voice_map`. The system will automatically:
+1. Detect how many speakers are in the video
+2. Find the longest clean segment for each speaker (~10s)
+3. Use those clips as voice cloning references
 
 ```bash
-# Extract speaker reference audio from the source video
-ffmpeg -i input.mp4 -ss 10 -t 10 -ar 16000 -ac 1 ref_speaker0.wav
+curl -X POST http://localhost:8000/api/v1/dubbing/jobs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "video_path": "/absolute/path/to/input.mp4",
+    "target_language": "zh",
+    "speaker_voice_map": {}
+  }'
 ```
 
-### 2. Submit a dubbing job
+### Manual mode (custom reference audio)
+
+Prepare a reference WAV for each speaker, then submit with explicit mappings:
 
 ```bash
+# Extract reference clips manually
+ffmpeg -i input.mp4 -ss 10 -t 10 -ar 16000 -ac 1 ref_speaker0.wav
+ffmpeg -i input.mp4 -ss 120 -t 10 -ar 16000 -ac 1 ref_speaker1.wav
+
 curl -X POST http://localhost:8000/api/v1/dubbing/jobs \
   -H "Content-Type: application/json" \
   -d '{

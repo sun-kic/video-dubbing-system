@@ -43,7 +43,10 @@ class CreateDubbingJobRequest(BaseModel):
     target_language: str = Field(default="en")
     speaker_voice_map: Dict[str, str] = Field(
         default_factory=dict,
-        description="Map diarization speaker labels to reference WAV paths for cloning",
+        description=(
+            "Map speaker labels to reference WAV paths for voice cloning. "
+            "Leave empty {} to auto-extract 10s reference clips from the source video."
+        ),
     )
 
     @field_validator("video_path")

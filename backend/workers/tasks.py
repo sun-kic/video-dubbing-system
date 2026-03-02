@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
@@ -57,6 +58,43 @@ def _align_segments(
     return aligned
 
 
+def _auto_extract_speaker_refs(
+    diarization: List[DiarizationSegment],
+    source_audio: str,
+    ref_dir: Path,
+    target_duration: float = 10.0,
+    min_duration: float = 3.0,
+) -> Dict[str, str]:
+    """
+    For each detected speaker, find their longest clean segment and
+    extract it as a reference WAV for voice cloning.
+    """
+    speaker_segments: Dict[str, List[DiarizationSegment]] = defaultdict(list)
+    for seg in diarization:
+        speaker_segments[seg.speaker].append(seg)
+
+    speaker_refs: Dict[str, str] = {}
+    for speaker, segments in speaker_segments.items():
+        # Pick the single longest segment for cleanest reference audio
+        best = max(segments, key=lambda s: s.end - s.start)
+        duration = min(target_duration, best.end - best.start)
+
+        if duration < min_duration:
+            logger.warning(
+                "Speaker %s has no segment >= %.1fs (best=%.1fs); using anyway",
+                speaker, min_duration, duration,
+            )
+
+        ref_path = ref_dir / f"ref_{speaker}.wav"
+        VideoProcessor.extract_audio_segment(source_audio, str(ref_path), best.start, duration)
+        speaker_refs[speaker] = str(ref_path)
+        logger.info(
+            "Auto ref audio: %s → %.1fs from t=%.1fs", speaker, duration, best.start
+        )
+
+    return speaker_refs
+
+
 @celery_app.task(bind=True, name="dubbing.process_video")
 def process_video_dubbing(
     self,
@@ -66,12 +104,13 @@ def process_video_dubbing(
     source_language: str = "auto",
 ) -> dict:
     """
-    Process video dubbing with translation support.
+    Process video dubbing with translation and voice cloning.
 
     Args:
         video_path: Path to source video
         target_language: Target language code (e.g., "en", "ja", "zh")
-        speaker_voice_map: Dict mapping speaker labels to reference audio paths
+        speaker_voice_map: Dict mapping speaker labels to reference audio paths.
+                           Pass an empty dict {} to auto-extract from the video.
         source_language: Source language code or "auto" for detection
     """
     job_id = str(uuid4())
@@ -79,8 +118,10 @@ def process_video_dubbing(
 
     work_dir = settings.TEMP_DIR / f"job-{job_id}"
     generated_audio_dir = work_dir / "tts"
+    ref_dir = work_dir / "refs"
     work_dir.mkdir(parents=True, exist_ok=True)
     generated_audio_dir.mkdir(parents=True, exist_ok=True)
+    ref_dir.mkdir(parents=True, exist_ok=True)
 
     try:
         source_video = Path(video_path)
@@ -103,7 +144,7 @@ def process_video_dubbing(
 
         # Step 3: Translation
         if source_language != target_language:
-            self.update_state(state=states.STARTED, meta={"progress": 0.25, "message": f"Translating from {source_language} to {target_language}"})
+            self.update_state(state=states.STARTED, meta={"progress": 0.25, "message": f"Translating from {source_language} to {target_language}"}),
             texts = [seg.text for seg in transcript]
             translated_texts = TranslationService.translate(texts, source_language=source_language, target_language=target_language)
             for i, seg in enumerate(transcript):
@@ -115,11 +156,17 @@ def process_video_dubbing(
         self.update_state(state=states.STARTED, meta={"progress": 0.40, "message": "Running speaker diarization"})
         diarization = SpeakerDiarizationService.diarize(source_audio)
 
-        # Step 5: Align segments
+        # Step 5: Auto-extract speaker reference audio if not provided
+        if not speaker_voice_map:
+            self.update_state(state=states.STARTED, meta={"progress": 0.48, "message": "Auto-extracting speaker reference audio"})
+            speaker_voice_map = _auto_extract_speaker_refs(diarization, source_audio, ref_dir)
+            logger.info("Auto-extracted refs for %d speakers: %s", len(speaker_voice_map), list(speaker_voice_map.keys()))
+
+        # Step 6: Align segments
         self.update_state(state=states.STARTED, meta={"progress": 0.55, "message": "Aligning segments with speakers"})
         aligned_segments = _align_segments(transcript, diarization)
 
-        # Step 6: TTS synthesis with voice cloning
+        # Step 7: TTS synthesis with voice cloning
         self.update_state(state=states.STARTED, meta={"progress": 0.65, "message": "Synthesizing speech with voice cloning"})
         discovered_speakers = sorted({segment.speaker for segment in aligned_segments})
 
@@ -130,12 +177,9 @@ def process_video_dubbing(
 
             speaker_ref = speaker_voice_map.get(segment.speaker)
             if not speaker_ref:
-                if speaker_voice_map:
-                    speaker_ref = next(iter(speaker_voice_map.values()))
-                else:
-                    raise RuntimeError(
-                        f"Missing voice map for {segment.speaker}. Provide speaker_voice_map in request."
-                    )
+                # Fall back to first available reference
+                speaker_ref = next(iter(speaker_voice_map.values()))
+                logger.warning("No ref for %s, using fallback", segment.speaker)
 
             TTSService.synthesize_with_clone(
                 text=segment.text,
@@ -151,12 +195,12 @@ def process_video_dubbing(
                 meta={"progress": segment_progress, "message": f"Synthesizing segment {idx + 1}/{len(aligned_segments)}"}
             )
 
-        # Step 7: Merge audio segments
+        # Step 8: Merge audio segments
         self.update_state(state=states.STARTED, meta={"progress": 0.85, "message": "Merging audio segments"})
         dubbed_audio = str(work_dir / "dubbed.wav")
         VideoProcessor.merge_audio_segments(output_segments, dubbed_audio)
 
-        # Step 8: Mux with video
+        # Step 9: Mux with video
         self.update_state(state=states.STARTED, meta={"progress": 0.95, "message": "Creating output video"})
         output_video = settings.LOCAL_STORAGE_PATH / f"dubbed_{source_video.stem}_{job_id}.mp4"
         VideoProcessor.mux_video_with_audio(str(source_video), dubbed_audio, str(output_video))

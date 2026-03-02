@@ -63,6 +63,27 @@ class VideoProcessor:
         return str(out)
 
     @classmethod
+    def extract_audio_segment(
+        cls, audio_path: str, output_path: str, start: float, duration: float, sample_rate: int = 16000
+    ) -> str:
+        """Extract a time-ranged segment from an audio file."""
+        out = Path(output_path)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        cmd = [
+            settings.FFMPEG_BIN,
+            "-y",
+            "-i", audio_path,
+            "-ss", str(start),
+            "-t", str(duration),
+            "-ac", "1",
+            "-ar", str(sample_rate),
+            "-c:a", "pcm_s16le",
+            str(out),
+        ]
+        cls._run(cmd)
+        return str(out)
+
+    @classmethod
     def merge_audio_segments(cls, audio_paths: Iterable[str], output_path: str) -> str:
         audio_list = [Path(p) for p in audio_paths]
         if not audio_list:
