@@ -15,8 +15,9 @@ Video → Extract Audio → ASR (Whisper) → Translation → Speaker Diarizatio
 |-----------|-----------|
 | API Server | FastAPI |
 | Task Queue | Celery + Redis |
-| ASR | faster-whisper (Whisper large-v3) |
-| Translation | GPT-4o (primary) / Helsinki-NLP offline (fallback) |
+| ASR (Mac) | mlx-whisper — Apple Neural Engine |
+| ASR (Windows) | faster-whisper — CUDA |
+| Translation | GPT-5 (primary) / Helsinki-NLP offline (fallback) |
 | Speaker Diarization | pyannote.audio |
 | Voice Cloning TTS | F5-TTS |
 | Video Processing | FFmpeg |
@@ -38,7 +39,7 @@ Video → Extract Audio → ASR (Whisper) → Translation → Speaker Diarizatio
 | Service | Required | Purpose | Get it |
 |---------|----------|---------|--------|
 | **HuggingFace Token** | **Yes** (first run) | Download pyannote diarization models | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
-| **OpenAI API Key** | No | High-quality GPT-4o translation | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+| **OpenAI API Key** | No | High-quality GPT-5 translation | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
 
 > **HuggingFace model terms:** After obtaining your token, visit and accept the terms for:
 > - https://huggingface.co/pyannote/speaker-diarization-3.1
@@ -107,15 +108,17 @@ After installation, edit `.env` in the project root:
 # Required for first-time model download
 HF_TOKEN=hf_your_token_here
 
-# Optional: enables high-quality GPT-4o translation
+# Optional: enables high-quality GPT-5 translation
+# Falls back to free local Helsinki-NLP model if not set
 OPENAI_API_KEY=sk-your_key_here
 
-# Device settings — Mac M1 defaults:
-WHISPER_DEVICE=cpu
-WHISPER_COMPUTE_TYPE=int8
+# ── Mac Apple Silicon (set automatically by setup-mac.sh) ──
+WHISPER_BACKEND=mlx-whisper
+WHISPER_MLX_MODEL=mlx-community/whisper-large-v3-mlx
 DIARIZATION_DEVICE=cpu
 
-# Device settings — Windows CUDA (set automatically by setup script):
+# ── Windows NVIDIA GPU (set automatically by setup-win.ps1) ──
+# WHISPER_BACKEND=faster-whisper
 # WHISPER_DEVICE=cuda
 # WHISPER_COMPUTE_TYPE=float16
 # DIARIZATION_DEVICE=cuda
@@ -267,9 +270,9 @@ video-dubbing-system/
 
 | Hardware | ASR (21 min video) | TTS per segment | Notes |
 |----------|--------------------|-----------------|-------|
-| M1 Mac mini 16GB | ~60-90 min | ~2 min | CPU only |
-| M1 Pro Max 32GB | ~5-10 min | ~30 sec | MPS acceleration |
-| RTX 3090 24GB | ~3-5 min | ~10 sec | Full CUDA |
+| M1 Mac mini 16GB | ~60-90 min | ~2 min | faster-whisper CPU only |
+| M1 Pro Max 32GB | ~5-10 min | ~30 sec | mlx-whisper Neural Engine |
+| RTX 3090 24GB | ~3-5 min | ~10 sec | faster-whisper CUDA |
 
 ---
 
