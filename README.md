@@ -39,7 +39,7 @@ Video → Extract Audio → ASR (Whisper) → Translation → Speaker Diarizatio
 | Service | Required | Purpose | Get it |
 |---------|----------|---------|--------|
 | **HuggingFace Token** | **Yes** (first run) | Download pyannote diarization models | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
-| **OpenAI API Key** | No | High-quality GPT-5 translation | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+| **Translation API Key** | No | LLM translation (any OpenAI-compatible API) | OpenAI / OpenRouter / Ollama |
 
 > **HuggingFace model terms:** After obtaining your token, visit and accept the terms for:
 > - https://huggingface.co/pyannote/speaker-diarization-3.1
@@ -108,9 +108,23 @@ After installation, edit `.env` in the project root:
 # Required for first-time model download
 HF_TOKEN=hf_your_token_here
 
-# Optional: enables high-quality GPT-5 translation
-# Falls back to free local Helsinki-NLP model if not set
-OPENAI_API_KEY=sk-your_key_here
+# ── Translation (optional — falls back to free local Helsinki-NLP model) ──
+# Supports any OpenAI-compatible API: OpenAI, OpenRouter, Ollama, vLLM, etc.
+
+# Example: OpenAI
+TRANSLATION_MODEL=gpt-5
+TRANSLATION_BASE_URL=
+TRANSLATION_API_KEY=sk-your_openai_key
+
+# Example: OpenRouter + DeepSeek
+# TRANSLATION_MODEL=deepseek/deepseek-chat-v3-5
+# TRANSLATION_BASE_URL=https://openrouter.ai/api/v1
+# TRANSLATION_API_KEY=sk-or-your_openrouter_key
+
+# Example: local Ollama
+# TRANSLATION_MODEL=llama3
+# TRANSLATION_BASE_URL=http://localhost:11434/v1
+# TRANSLATION_API_KEY=ollama
 
 # ── Mac Apple Silicon (set automatically by setup-mac.sh) ──
 WHISPER_BACKEND=mlx-whisper

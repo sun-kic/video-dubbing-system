@@ -51,14 +51,19 @@ class TranslationService:
         source_language: str,
         target_language: str,
     ) -> List[str]:
-        """Translate using LLM API (OpenAI, Anthropic, etc.)."""
+        """Translate using any OpenAI-compatible API (OpenAI, OpenRouter, Ollama, etc.)."""
         try:
             from openai import OpenAI
         except ImportError:
             raise RuntimeError("openai package required for LLM translation")
 
-        client = OpenAI()
-        
+        from backend.core.config import settings
+
+        client = OpenAI(
+            api_key=settings.TRANSLATION_API_KEY or None,
+            base_url=settings.TRANSLATION_BASE_URL or None,
+        )
+
         language_names = {
             "zh": "Chinese", "en": "English", "ja": "Japanese",
             "ko": "Korean", "es": "Spanish", "fr": "French",
@@ -83,7 +88,7 @@ Segments to translate:
             prompt += f"{i+1}. {text}\n"
 
         response = client.chat.completions.create(
-            model="gpt-5",
+            model=settings.TRANSLATION_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
         )

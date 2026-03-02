@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     VOICE_CLONE_MODEL: str = Field(default="tts_models/multilingual/multi-dataset/xtts_v2")
     TTS_DEVICE: str = Field(default="cpu")
 
+    # Translation — supports any OpenAI-compatible API (OpenAI, OpenRouter, Ollama, etc.)
+    TRANSLATION_MODEL: str = Field(default="gpt-5")
+    TRANSLATION_BASE_URL: str = Field(default="")  # empty = use OpenAI default
+    TRANSLATION_API_KEY: str = Field(default="")   # empty = fall back to OPENAI_API_KEY env var
+
     # Pipeline defaults
     TARGET_LANGUAGE: str = Field(default="en")
     MAX_UPLOAD_SIZE_MB: int = Field(default=500)
